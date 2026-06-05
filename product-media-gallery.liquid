@@ -1,0 +1,139 @@
+{% assign featured_media = product.selected_or_first_available_variant.featured_media
+  | default: product.featured_media
+%}
+{% assign product = product | default: featured_product %}
+
+{%- assign fancybox_enabled = section.settings.enable_fancybox -%}
+
+<div class="product-gallery-wrapper" data-layout="{{ gallery_layout }}">
+  <script>
+    window.productVariants = {{ product.variants | json }};
+  </script>
+  <div class="product-gallery" id="ProductGallery-{{ section.id }}" role="region" aria-label="Product media gallery">
+    <div class="gallery-main">
+      <div class="gallery-track">
+        {% if product.media != blank %}
+          {% for media in product.media %}
+            <div
+              class="
+                gallery-slide {% if media.id == featured_media.id or product.selected_or_first_available_variant.featured_media == nil and forloop.index == 1 %}
+                  is-active
+                {% endif %}
+                {% if product.selected_or_first_available_variant.featured_media == nil and forloop.index == 1 %} is-active{% endif %}
+              "
+              data-index="{{ forloop.index0 }}"
+              data-media-id="{{ media.id }}"
+            >
+              <div
+                class="
+                  product-media
+                  {% if section.settings.image_ratio != 'adapt' %}ratio-{{ section.settings.image_ratio }}{% endif %}
+                  fit-{{ section.settings.image_fit }}
+                "
+              >
+                {%- assign fancybox_enabled = section.settings.enable_fancybox -%}
+                {% case media.media_type %}
+                  {% when 'image' %}
+                    <a
+                      href="{{ media | image_url: width: 2000 }}"
+                      {% if fancybox_enabled %}
+                        data-fancybox="gallery"
+                        data-caption="{{ media.alt | escape }}"
+                      {% else %}
+                        onclick="return false;"
+                        style="cursor: default;"
+                      {% endif %}
+                      class="product-gallery__link {% unless fancybox_enabled %}no-click{% endunless %}"
+                    >
+                      <img
+                        src="{{ media | image_url: width: 1200 }}"
+                        srcset="
+                          {{ media | image_url: width: 400 }} 400w,
+                          {{ media | image_url: width: 800 }} 800w,
+                          {{ media | image_url: width: 1200 }} 1200w
+                        "
+                        sizes="(min-width: 990px) 50vw, 100vw"
+                        alt="{{ media.alt | default: product.title | escape }}"
+                        loading="lazy"
+                        width="{{ media.width }}"
+                        height="{{ media.height }}"
+                      >
+                    </a>
+                  {% when 'video' %}
+                    {{ media | video_tag: controls: true }}
+                  {% when 'external_video' %}
+                    {{ media | external_video_tag }}
+                  {% when 'model' %}
+                    {{ media | model_viewer_tag }}
+                {% endcase %}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="gallery-slide is-active">
+            <div class="product-media placeholder-media">
+              {{ 'product-apparel-1' | placeholder_svg_tag: 'placeholder-svg' }}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+      <button class="gallery-nav prev" aria-label="Previous">{{ 'prev-arrow.svg' | inline_asset_content }}</button>
+      <button class="gallery-nav next" aria-label="Next">{{ 'next-arrow.svg' | inline_asset_content }}</button>
+    </div>
+
+    {% unless gallery_layout == 'two_column' or gallery_layout == 'singel_column' %}
+      <div class="product_thumbnail_image">
+        <button class="gallery-arrow prev" aria-label="Next image" aria-controls="ProductGallery-{{ section.id }}">
+          {{ 'prev-arrow.svg' | inline_asset_content }}
+        </button>
+
+        <div class="gallery-thumbs">
+          {% for media in product.media %}
+            <div class="unity-thumbs-slide">
+              <button
+                class="thumb {% if media.id == featured_media.id %}active{% endif %}"
+                data-index="{{ forloop.index0 }}"
+                data-media-id="{{ media.id }}"
+              >
+                <img
+                  src="{{ media | image_url: width: 200 }}"
+                  srcset="
+                    {{ media | image_url: width: 200 }} 1x,
+                    {{ media | image_url: width: 400 }} 2x
+                  "
+                  alt="{{ media.alt | escape }}"
+                  loading="lazy"
+                  width="200"
+                  height="{{ 200 | divided_by: media.aspect_ratio | ceil }}"
+                >
+              </button>
+            </div>
+          {% endfor %}
+        </div>
+        <button class="gallery-arrow next" aria-label="Next image">
+          {{ 'next-arrow.svg' | inline_asset_content }}
+        </button>
+      </div>
+    {% endunless %}
+  </div>
+</div>
+
+<script>
+    {% if fancybox_enabled %}
+    document.addEventListener('DOMContentLoaded', function() {
+
+        Fancybox.bind("[data-fancybox='gallery']", {
+          Hash: false,
+          Thumbs: { autoStart: false },
+          Toolbar: {
+            display: {
+              left: ['infobar'],
+              middle: [],
+              right: ['iterateZoom', 'close'],
+            },
+          },
+        });
+
+    });
+  {% endif %}
+</script>
