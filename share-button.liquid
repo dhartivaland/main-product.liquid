@@ -1,0 +1,61 @@
+{% comment %}
+  Renders share button.
+  Accepts:
+  - block: {Object} passes in the block information.
+  - share_link: {String} url to be added to the input the user will get/copy.
+
+  Usage:
+  {% render 'share-button',
+    block: block,
+    share_link: share_url
+  %}
+{% endcomment %}
+
+<div
+  id="Share-{{ section.id }}"
+  class="share-button"
+  {{ block.shopify_attributes }}
+>
+  <button class="share-button__trigger hidden" aria-expanded="false">
+    {{ 'icon-share.svg' | inline_asset_content }}
+    <p>{{ block.settings.share_label | escape }}</p>
+  </button>
+
+  <div class="share-button__details" id="Details-{{ block.id }}-{{ section.id }}" hidden>
+    <div class="share-button__fallback motion-reduce">
+      <div class="field">
+        <span
+          id="ShareMessage-{{ section.id }}"
+          class="share-button__message hidden"
+          role="status"
+        >
+        </span>
+        <input
+          type="text"
+          class="field__input"
+          id="ShareUrl-{{ section.id }}"
+          value="{{ share_link }}"
+          placeholder="{{ 'products.product.share.share_url' | t }}"
+          onclick="this.select();"
+          readonly
+        >
+      </div>
+
+      <button class="share-button__close hidden" aria-label="{{ 'products.product.share.close' | t }}">
+        <span class="svg-wrapper">
+          {{- 'icon-close.svg' | inline_asset_content -}}
+        </span>
+        <span class="visually-hidden">{{ 'products.product.share.close' | t }}</span>
+      </button>
+
+      <button class="share-button__copy" aria-label="{{ 'products.product.share.copy_to_clipboard' | t }}">
+        <span class="svg-wrapper">
+          {{- 'icon-copy.svg' | inline_asset_content -}}
+        </span>
+        <span class="visually-hidden">{{ 'products.product.share.copy_to_clipboard' | t }}</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ 'share.js' | asset_url }}" defer="defer"></script>
