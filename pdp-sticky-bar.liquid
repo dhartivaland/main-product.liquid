@@ -1,0 +1,187 @@
+{% comment %}
+  Snippet: sticky-cart.liquid
+  Place in: snippets/sticky-cart.liquid
+  Usage: {% render 'sticky-cart', product: product, section: section %}
+{% endcomment %}
+
+{{ 'sticky-cart.js' | asset_url | script_tag }}
+
+<style>
+  .sticky-cart__btn-text.btn-icon{
+    padding: 0;
+  }
+</style>
+
+{%- liquid
+  assign current_variant = product.selected_or_first_available_variant
+  assign product_image = current_variant.featured_image | default: product.featured_image
+  assign quantity_rule_soldout = false
+  if current_variant.inventory_management == 'shopify' and current_variant.inventory_policy == 'deny'
+    if current_variant.quantity_rule.min > current_variant.inventory_quantity
+      assign quantity_rule_soldout = true
+    endif
+  endif
+  assign btn_label = 'products.product.add_to_cart' | t
+  assign letters = btn_label | split: ''
+  assign total = letters.size
+-%}
+
+<div
+  class="page-width product__sticky-cart"
+  id="sticky-cart-{{ section.id }}"
+  data-sticky-cart-section="{{ section.id }}"
+  data-currency-code="{{ cart.currency.iso_code }}"
+
+  aria-hidden="true"
+>
+  <div class="product__sticky-cart-inner">
+    <div class="sticky-cart-inner">
+      <div class="sticky-cart__image">
+        {%- if product_image -%}
+          <img
+            src="{{ product_image | image_url: width: 65 }}"
+            srcset="
+              {{ product_image | image_url: width: 65 }} 1x,
+              {{ product_image | image_url: width: 96 }} 2x
+            "
+            alt="{{ product_image.alt | escape }}"
+            width="65"
+            height="{{ 65 | divided_by: product_image.aspect_ratio | ceil }}"
+            loading="lazy"
+          >
+        {%- else -%}
+          {{ 'product-1' | placeholder_svg_tag: 'placeholder-svg' }}
+        {%- endif -%}
+      </div>
+
+      <div class="sticky-cart__info">
+        <h5 class="sticky-cart__title">{{ product.title }}</h5>
+        <div class="price sticky-cart__meta">
+          <span class="sticky-cart__price body-text-color">{{- current_variant.price | money -}}</span>
+          {% if current_variant.compare_at_price > current_variant.price %}
+            <span>
+              <div class="compare_price price-item price-item--regular product-price__price">
+                <span class="money price-compare">
+                  {% if settings.currency_code_enabled %}
+                    {{ current_variant.compare_at_price | money }}
+                  {% else %}
+                    {{ current_variant.compare_at_price | money }}
+                  {% endif %}
+                </span>
+              </div>
+            </span>
+          {% endif %}
+
+          {%- unless product.has_only_default_variant -%}
+            <span class="sticky-cart__separator">·</span>
+            <span class="sticky-cart__variant">
+              {{ current_variant.options | join: ' / ' }}
+            </span>
+          {%- endunless -%}
+        </div>
+      </div>
+    </div>
+
+    <button
+      id="StickySubmitButton-{{ section.id }}"
+      type="button"
+      class="sticky-cart__btn button button--primary product-form__submit custom-submit-button"
+      data-section-id="{{ section.id }}"
+      data-add-text="{{ btn_label }}"
+      data-sold-text="{{ 'products.product.notify_me' | t }}"
+      {%- if current_variant == null or current_variant.available == false or quantity_rule_soldout -%}
+        disabled
+      {%- endif -%}
+    >
+      {% assign btn_label_notifyme = 'products.product.notify_me' | t %}
+      <span class="btn-icon sticky-cart__btn-text">
+        {%- if current_variant == null -%}
+          {{ 'products.product.unavailable' | t }}
+        {%- elsif current_variant.available == false or quantity_rule_soldout -%}
+          <div class="hover-text-wrapper">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              style="display:block;"
+            >
+              <path
+                d="M12 5V19"
+                stroke="currentcolor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <path
+                d="M19 12H5"
+                stroke="currentcolor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span class="hover-hide">
+              {{ btn_label_notifyme }}
+            </span>
+
+            <span class="hover-show">
+              {% for letter1 in letters %}
+                {% if letter1 == ' ' %}
+                  <span class="letter-space" style="--i: {{ forloop.index0 }}; --total: {{ total }};">&nbsp;</span>
+                {% else %}
+                  <span style="--i: {{ forloop.index0 }}; --total: {{ total }};">
+                    {{ letter1 }}
+                  </span>
+                {% endif %}
+              {% endfor %}
+            </span>
+          </div>
+        {%- else -%}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            style="display:block;"
+          >
+            <path
+              d="M12 5V19"
+              stroke="currentcolor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <path
+              d="M19 12H5"
+              stroke="currentcolor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+          <div class="hover-text-wrapper">
+            <span class="hover-hide">
+              {{ btn_label }}
+            </span>
+
+            <span class="hover-show">
+              {% for letter in letters %}
+                {% if letter == ' ' %}
+                  <span class="letter-space" style="--i: {{ forloop.index0 }}; --total: {{ total }};">&nbsp;</span>
+                {% else %}
+                  <span style="--i: {{ forloop.index0 }}; --total: {{ total }};">
+                    {{ letter }}
+                  </span>
+                {% endif %}
+              {% endfor %}
+            </span>
+          </div>
+        {%- endif -%}
+      </span>
+      <div class="loading-overlay__spinner hidden">
+        <svg class="spinner" viewBox="0 0 66 66">
+          <circle class="path" fill="none" stroke-width="6" cx="33" cy="33" r="30" stroke="currentColor"></circle>
+        </svg>
+      </div>
+    </button>
+  </div>
+</div>
