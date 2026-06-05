@@ -1,0 +1,341 @@
+<div class="featured-slide">
+  <a
+    href="{{ card_product.url }}"
+    class="featured-grid-image"
+    data-product="{{ card_product.variants | json | escape }}"
+  >
+    {% assign ratio_setting = section.settings.image_ratio %}
+    {% assign first_image = card_product.featured_media | default: card_product.images.first %}
+    {% assign second_image = card_product.images[1] %}
+
+    {% if ratio_setting == 'adapt' and first_image %}
+      {% assign ratio = first_image.aspect_ratio %}
+    {% else %}
+      {% assign ratio = ratio_setting %}
+    {% endif %}
+
+    <div class="card-image media-image" style="aspect-ratio: {{ ratio }};">
+      {% if first_image %}
+        <img
+          src="{{ first_image | image_url: width: 600 }}"
+          loading="lazy"
+          class="product-card-image product-card-image--primary"
+          alt="{{ first_image.alt | default: card_product.title | escape }}"
+          width="{{ first_image.width }}"
+          height="{{ first_image.height }}"
+          data-main-image
+        >
+
+        {% if second_image %}
+          <img
+            src="{{ second_image | image_url: width: 600 }}"
+            loading="lazy"
+            class="product-card-image product-card-image--secondary"
+            alt="{{ second_image.alt | default: card_product.title | escape }}"
+            width="{{ second_image.width }}"
+            height="{{ second_image.height }}"
+            data-main-image
+          >
+        {% endif %}
+
+      {% else %}
+        {% if placeholder_image %}
+          {{ placeholder_image | placeholder_svg_tag: 'placeholder-svg' }}
+        {% else %}
+          {{ 'product-apparel-2' | placeholder_svg_tag: 'placeholder-svg' }}
+        {% endif %}
+      {% endif %}
+    </div>
+
+    {%- assign show_badge = false -%}
+
+    {%- if card_product.available == false -%}
+      {%- assign show_badge = true -%}
+    {%- elsif card_product.compare_at_price > card_product.price and card_product.available -%}
+      {%- assign show_badge = true -%}
+    {%- elsif card_product.metafields.custom.product_label != blank -%}
+      {%- assign show_badge = true -%}
+    {%- endif -%}
+
+    {%- if show_badge -%}
+      <div class="card__badge {{ settings.badge_position }}">
+        {%- if card_product.available == false -%}
+          <span
+            id="NoMediaStandardBadge-{{ section_id }}-{{ card_product.id }}"
+            class="badge badge--bottom-left"
+          >
+            {{ 'products.product.notify_me' | t }}
+          </span>
+
+        {%- elsif card_product.compare_at_price > card_product.price and card_product.available -%}
+          <span
+            id="NoMediaStandardBadge-{{ section_id }}-{{ card_product.id }}"
+            class="badge badge--bottom-left"
+          >
+            {{
+              card_product.compare_at_price
+              | minus: card_product.price
+              | times: 100.0
+              | divided_by: card_product.compare_at_price
+              | round
+            -}}
+            {{ 'products.product.percentage' | t }}
+          </span>
+        {%- endif -%}
+
+        {%- if card_product.metafields.custom.product_label != blank -%}
+          <span class="badge custom-product-badge">
+            {{ card_product.metafields.custom.product_label }}
+          </span>
+        {%- endif -%}
+      </div>
+    {%- endif -%}
+
+    {% if show_countdown %}
+      {% assign countdown_date = card_product.metafields.custom.countdown_end %}
+
+      {% if countdown_date != blank %}
+        <div
+          class="sale-countdown countdown-timer sale-countdown-{{ block.id }}"
+          data-end-date="{{ countdown_date | date: "%Y-%m-%dT%H:%M:%S" }}"
+        >
+          <div class="countdown">
+            <span
+              ><b class="days">00</b> <span class="mobile-text">{{ 'products.product.countdown.days' | t }}</span></span
+            >:
+            <span
+              ><b class="hours">00</b> <span class="mobile-text">{{ 'products.product.countdown.hrs' | t }}</span></span
+            >:
+            <span
+              ><b class="minutes">00</b>
+              <span class="mobile-text">{{ 'products.product.countdown.min' | t }}</span></span
+            >:
+            <span
+              ><b class="seconds">00</b>
+              <span class="mobile-text">{{ 'products.product.countdown.sec' | t }}</span></span
+            >
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
+  </a>
+
+  <div class="featured-grid-info">
+    <div class="featured-text flex-div space flex-start">
+      <div class="featured-title-price">
+        <div class="flex-div w-100 featured-price">
+          <div>
+            {% if show_vendor %}
+              <span class="featured-grid-vendor">
+                {{ card_product.vendor }}
+              </span>
+            {% endif %}
+
+            <h6 class="featured-grid-title">
+              <a href="{{ card_product.url }}" class="h6">
+                {{ card_product.title | truncate: 25, '...' }}
+              </a>
+            </h6>
+          </div>
+
+          {% assign has_real_variants = false %}
+
+          {% if card_product.options_with_values.size > 1 %}
+            {% assign has_real_variants = true %}
+          {% elsif card_product.options_with_values.size == 1 %}
+            {% assign first_option = card_product.options_with_values.first %}
+            {% if first_option.values.first != 'Default Title' %}
+              {% assign has_real_variants = true %}
+            {% endif %}
+          {% endif %}
+
+          {% if show_swatches and has_real_variants %}
+            <div class="variant-wrapper">
+              {% for option in card_product.options_with_values %}
+                {% assign option_name = option.name | downcase %}
+                {% assign is_color = false %}
+                {% if option_name contains 'color' or option_name contains 'colour' %}
+                  {% assign is_color = true %}
+                {% endif %}
+
+                <div class="variant-group" data-option-index="{{ forloop.index0 }}">
+                  <div class="variant-values">
+                    {% for value in option.values %}
+                      <button
+                        type="button"
+                        class="swatch variant-swatch{% if is_color %} variant-swatch--color{% endif %}"
+                        data-value="{{ value }}"
+                        {% if is_color %}
+                          style="background-color: {{ value }};"
+                          title="{{ value }}"
+                          aria-label="{{ value }}"
+                        {% endif %}
+                      >
+                        {% unless is_color %}
+                          {{ value }}
+                        {% endunless %}
+                      </button>
+                    {% endfor %}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="product-card">
+          <div class="overflow-hidden price-wrapper">
+            <div class="price hover-effect">
+              {% assign price = card_product.price %}
+              {% assign compare_price = card_product.compare_at_price %}
+              {% assign price_varies = card_product.price_varies %}
+
+              {% if price_varies %}
+                <span class="price-from" data-price="{{ card_product.price_min }}">
+                  {{ card_product.price_min | money }}
+                </span>
+              {% elsif compare_price > price %}
+                <span class="price-sale" data-price="{{ price }}">
+                  {{ price | money }}
+                </span>
+                <span class="price-compare" data-compare-price="{{ compare_price }}">
+                  {{ compare_price | money }}
+                </span>
+              {% else %}
+                <span class="price-regular hover-effect" data-price="{{ price }}">
+                  {{ price | money }}
+                </span>
+              {% endif %}
+
+              {% if settings.currency_code_enabled %}
+                <span class="currency-code">
+                  {{ cart.currency.iso_code }}
+                </span>
+              {% endif %}
+            </div>
+
+            {% assign current_variant = card_product.selected_or_first_available_variant %}
+
+            {% if current_variant.unit_price %}
+              <div class="unit-price">
+                <span class="visually-hidden">Unit price</span>
+
+                {{ current_variant.unit_price | money }}
+                /
+
+                {% if current_variant.unit_price_measurement.reference_value != 1 %}
+                  {{ current_variant.unit_price_measurement.reference_value }}
+                {% endif %}
+
+                {{ current_variant.unit_price_measurement.reference_unit }}
+              </div>
+            {% endif %}
+
+            {% assign first_variant = card_product.selected_or_first_available_variant %}
+
+            <div class="featured-card-actions hover-effect">
+              {% if card_product.variants.size > 1 %}
+                <div class="quick-add">
+                  <button
+                    id="{{ product_form_id }}-submit"
+                    type="submit"
+                    name="add"
+                    aria-haspopup="dialog"
+                    data-modal="#QuickAdd-{{ card_product.id }}"
+                    data-product-url="{{ card_product.url }}"
+                    class="quick-add__submit button-main button"
+                    aria-labelledby="{{ product_form_id }}-submit title-{{ section_id }}-{{ card_product.id }}"
+                  >
+                    <span>{{ 'products.product.choose_options' | t }}</span>
+                    {%- if horizontal_quick_add -%}
+                      <span class="icon-wrap">
+                        {{- 'icon-arrow.svg' | inline_asset_content -}}
+                      </span>
+                    {%- endif -%}
+                    <div class="loading-overlay__spinner hidden">
+                      <svg class="spinner" viewBox="0 0 66 66">
+                        <circle class="path" fill="none" stroke-width="6" cx="33" cy="33" r="30"></circle>
+                      </svg>
+                    </div>
+                  </button>
+
+                  <quick-add-modal id="QuickAdd-{{ card_product.id }}" class="quick-add-modal">
+                    <div
+                      role="dialog"
+                      aria-label="{{ 'products.product.choose_product_options' | t: product_name: card_product.title | escape }}"
+                      aria-modal="true"
+                      class="quick-add-modal__content global-settings-popup"
+                      tabindex="-1"
+                    >
+                      <button
+                        id="ModalClose-{{ card_product.id }}"
+                        type="button"
+                        class="quick-add-modal__toggle"
+                        aria-label="{{ 'accessibility.close' | t }}"
+                      >
+                        {{- 'icon-close.svg' | inline_asset_content -}}
+                      </button>
+                      <div id="QuickAddInfo-{{ card_product.id }}" class="quick-add-modal__content-info"></div>
+                    </div>
+                  </quick-add-modal>
+                </div>
+
+              {% else %}
+                <form method="post" action="{{ routes.cart_add_url }}" class="ajax-add-to-cart-form">
+                  <input type="hidden" name="id" value="{{ first_variant.id }}">
+                  <input type="hidden" name="quantity" value="1">
+
+                  {% if first_variant.available %}
+                    <button
+                      type="submit"
+                      class="button flex-div gap-2"
+                      data-product-url="{{ card_product.url }}"
+                    >
+                      <span class="btn-icon">
+                        {{ 'icon-plus.svg' | inline_asset_content }}
+                        <span>{{ 'products.product.add_to_cart' | t }}</span>
+                      </span>
+                      <span class="cart-spinner" hidden>
+                        <svg class="spinner-icon" viewBox="0 0 50 50">
+                          <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5" stroke="#000"></circle>
+                        </svg>
+                      </span>
+                    </button>
+                  {% else %}
+                    <a href="{{ card_product.url }}" class="button flex-div gap-2 sold-out-link">
+                      {{ 'products.product.notify_me' | t }}
+                    </a>
+                  {% endif %}
+                </form>
+              {% endif %}
+            </div>
+          </div>
+          {% if show_rating %}
+            {%- if card_product.metafields.reviews.rating.value != blank -%}
+              {% liquid
+                assign rating_value = card_product.metafields.reviews.rating.value.rating | default: 0
+                assign rating_max = card_product.metafields.reviews.rating.value.scale_max | default: 5
+                assign decimal = rating_value | modulo: 1
+                assign rating_decimal = 0
+
+                if decimal >= 0.3 and decimal <= 0.7
+                  assign rating_decimal = 0.5
+                elsif decimal > 0.7
+                  assign rating_decimal = 1
+                endif
+              %}
+
+              <div class="rating" role="img" aria-label="{{ rating_value }} out of {{ rating_max }} stars">
+                <span
+                  class="rating-star"
+                  style="--rating: {{ card_product.metafields.reviews.rating.value.rating | floor }}; --rating-max: {{ card_product.metafields.reviews.rating.value.scale_max | default: 5 }}; --rating-decimal: {{ rating_decimal }};"
+                ></span>
+                <span class="rating-count">({{ card_product.metafields.reviews.rating_count }})</span>
+              </div>
+            {%- endif -%}
+          {%- endif -%}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
